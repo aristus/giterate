@@ -1,0 +1,73 @@
+#!/usr/bin/python
+## giterate, a thin interactive wrapper for git
+##
+## $ giterate status
+##
+## BSD-style license. Share and enjoy, but give credit where it's due.
+
+import sys, subprocess, re, cmd
+
+
+class opener(cmd.Cmd):
+    prompt = 'git> '
+
+    def replace_numbers(self, args):
+        for i, a in enumerate(args):
+            if a.isdigit():
+                args[i] = self.files[int(a)][2]
+        return args
+
+    def do_status(self, pattern):
+        if pattern:
+            pattern = re.compile(pattern)
+        else:
+            pattern = re.compile('^[^\?]')
+
+        results = self.run_command(['status', '--porcelain']).split('\n')
+        rem = re.compile(r'^(.)(.) (.+?)(?: -> (.+))?$')
+        for r in results:
+
+            # filtering. Right now just a regexp
+            if pattern and not pattern.search(r):
+                continue
+
+            m = rem.match(r)
+            if m:
+                x, y, path1, path2 = m.groups()
+                print "% 3s:   %s%s %s\x1b[0m" % (len(self.files), x, y, path1)
+                self.files.append((x,y,path1,path2)) ## TODO: what about path2?
+
+    def do_s(self, line): return self.do_status(line)
+
+    def do_generic(self, line):
+        m = re.match(r'^(\w+)\b(.*)$', line)
+        if m:
+            cmd, args = m.groups()
+            args = self.replace_numbers(re.split(r'\s+', args.strip()))
+            print self.run_command([cmd] + args)
+
+    def precmd(self, line):
+        if re.match(r'^s\b|status|EOF', line):
+            return line
+        return 'generic ' + line
+
+    def run_command(self, cmdline):
+        cmd = ['git'] + cmdline
+        self.files = []
+        process = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE)
+        return process.communicate()[0]
+
+    def init(self):
+        self.do_status('')
+        try:
+            self.cmdloop()
+        except Exception as e:
+            self.do_EOF(e)
+
+    def do_EOF(self, line):
+        print line + "\nMein Leiben!"
+        sys.exit(0)
+
+
+o = opener()
+o.init()
