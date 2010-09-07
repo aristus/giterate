@@ -1,0 +1,25 @@
+giterate, a thin interactive wrapper for git. Mainly it allows you to
+filter status by a regexp, and to use numbers instead of file names.
+
+$ ./giterate
+git> status .
+  0:   ?? giterate
+git> add 0
+git> s
+  0:   A  giterate
+git> commit -am "initial"
+[master (root-commit) 61bbda4] "initial"
+ 1 files changed, 73 insertions(+), 0 deletions(-)
+ create mode 100755 giterate
+
+git> log
+commit 61bbda48e55b46223dbe870f1178e5830f6c998d
+Author: Carlos Bueno <carlos@bueno.org>
+Date:   Tue Sep 7 00:08:30 2010 -0700
+
+   "initial"
+
+
+BSD license: Share and enjoy, but give credit where it's due.
+@author carlos@bueno.org 7 Sep 2010
+github.com/aristus/giterate
