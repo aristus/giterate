@@ -1,9 +1,30 @@
 #!/usr/bin/python
-## giterate, a thin interactive wrapper for git
+
+## giterate, a thin interactive wrapper for git. Mainly it allows you to
+## filter status by a regexp, and to use numbers instead of file names.
 ##
-## $ giterate status
+## $ ./giterate
+## git> status .
+##   0:   ?? giterate
+## git> add 0
+## git> s
+##   0:   A  giterate
+## git> commit -am "initial"
+## [master (root-commit) 61bbda4] "initial"
+##  1 files changed, 73 insertions(+), 0 deletions(-)
+##  create mode 100755 giterate
 ##
-## BSD-style license. Share and enjoy, but give credit where it's due.
+## git> log
+## commit 61bbda48e55b46223dbe870f1178e5830f6c998d
+## Author: Carlos Bueno <carlos@bueno.org>
+## Date:   Tue Sep 7 00:08:30 2010 -0700
+##
+##    "initial"
+##
+
+## BSD license: Share and enjoy, but give credit where it's due.
+## @author carlos@bueno.org 7 Sep 2010
+## github.com/aristus/giterate
 
 import sys, subprocess, re, cmd
 
@@ -40,11 +61,14 @@ class opener(cmd.Cmd):
     def do_s(self, line): return self.do_status(line)
 
     def do_generic(self, line):
-        m = re.match(r'^(\w+)\b(.*)$', line)
+        m = re.match(r'^(\w+?)(?:\s+(.*))?$', line)
         if m:
             cmd, args = m.groups()
-            args = self.replace_numbers(re.split(r'\s+', args.strip()))
-            print self.run_command([cmd] + args)
+            if args:
+                args = self.replace_numbers(re.split(r'\s+', args.strip()))
+                print self.run_command([cmd] + args)
+            else:
+                print self.run_command([cmd])
 
     def precmd(self, line):
         if re.match(r'^s\b|status|EOF', line):
@@ -54,7 +78,7 @@ class opener(cmd.Cmd):
     def run_command(self, cmdline):
         cmd = ['git'] + cmdline
         self.files = []
-        process = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE)
+        process = subprocess.Popen(' '.join(cmd), shell=True, stdout=subprocess.PIPE)
         return process.communicate()[0]
 
     def init(self):
@@ -62,7 +86,8 @@ class opener(cmd.Cmd):
         try:
             self.cmdloop()
         except Exception as e:
-            self.do_EOF(e)
+            raise
+            self.do_EOF(str(e))
 
     def do_EOF(self, line):
         print line + "\nMein Leiben!"
